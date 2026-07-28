@@ -12,7 +12,7 @@ const products = [
     subCategory: "foundation",
     description: "Lightweight, breathable foundation that matches skin tone and texture.",
     price: 449,
-    images: ["https://images.unsplash.com/photo-1631214524115-cde7de0ba8b9?w=500"],
+    images: ["https://m.media-amazon.com/images/I/711t9wxyobL._AC_UF1000,1000_QL80_.jpg"],
     isBestseller: true,
   },
   {
@@ -31,7 +31,7 @@ const products = [
     subCategory: "eyeliner",
     description: "Smudge-proof, long-wearing kohl eyeliner for everyday glam.",
     price: 275,
-    images: ["https://images.unsplash.com/photo-1631730359585-38a4935cbec4?w=500"],
+    images: ["https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSeVoVKRQhgQDvI1zbsRg52rkaZdZcS6BC6HbfOmmh5gq3X-x6yjcG6Au4a&s=10"],
   },
   {
     name: "Desert Dusk Eyeshadow Palette",
@@ -40,7 +40,7 @@ const products = [
     subCategory: "eyeshadow",
     description: "Warm-toned, highly pigmented eyeshadow palette.",
     price: 2900,
-    images: ["https://images.unsplash.com/photo-1512207736890-6ffed4b6ff7c?w=500"],
+    images: ["https://5.imimg.com/data5/ECOM/Default/2022/3/AO/MQ/CX/67799886/hudadusk6.jpg"],
     isBestseller: true,
   },
   {
