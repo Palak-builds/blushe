@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: #FFF6F8;
+  color: #3B1F2B;
+  font-family: 'Jost', sans-serif;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.blush-stroke {
+  position: relative;
+  display: inline-block;
+}
+
+.blush-stroke::after {
+  content: "";
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  bottom: 0.08em;
+  height: 0.42em;
+  background: linear-gradient(100deg, #F4C2D7 0%, #E8A6BF 60%, #C9A66B 100%);
+  border-radius: 999px 999px 999px 0;
+  z-index: -1;
+  opacity: 0.75;
+  transform: rotate(-1deg);
+}
+
+.blush-divider {
+  height: 6px;
+  width: 90px;
+  background: linear-gradient(90deg, #E8A6BF, #C9A66B);
+  border-radius: 999px 999px 999px 0;
+  transform: rotate(-2deg);
+}
+
+.nav-link {
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #E8A6BF, #C9A66B);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
