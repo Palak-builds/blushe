@@ -31,7 +31,7 @@ const products = [
     subCategory: "eyeliner",
     description: "Smudge-proof, long-wearing kohl eyeliner for everyday glam.",
     price: 275,
-    images: ["https://images.unsplash.com/photo-1631730359585-38a4935cbec4?w=500"],
+    images: ["C:\Users\Dell\Downloads\kajal.jfif"],
   },
   {
     name: "Desert Dusk Eyeshadow Palette",
@@ -40,7 +40,7 @@ const products = [
     subCategory: "eyeshadow",
     description: "Warm-toned, highly pigmented eyeshadow palette.",
     price: 2900,
-    images: ["https://images.unsplash.com/photo-1512207736890-6ffed4b6ff7c?w=500"],
+    images: ["C:\Users\Dell\Downloads\hudadusk.jpg"],
     isBestseller: true,
   },
   {
