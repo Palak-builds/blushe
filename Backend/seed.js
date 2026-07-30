@@ -1,157 +1,83 @@
 // Run with: node seed.js
+// NOTE ON IMAGES: These use placehold.co generated cards (brand + product name,
+// color-coded by category) instead of real brand photography. Real product
+// photos are copyrighted and can't be scraped/hotlinked safely -- swap these
+// for your own photographed products, or a licensed product-photo feed, before
+// using this publicly.
 require("dotenv").config();
 const mongoose = require("mongoose");
 const Product = require("./models/Product");
 
-// NOTE ON IMAGES:
-// Official brand product photography (Lakmé, Maybelline, MAC, etc.) can't be
-// hardcoded here reliably or legally - it's copyrighted, and hotlinking it
-// from random sources is what causes broken/invisible images in production.
-//
-// Instead, every product below gets a UNIQUE, guaranteed-to-render
-// placeholder image generated from its own name + brand (via placehold.co),
-// color-coded by subCategory. No two products share an image, and nothing
-// will ever 404. Swap `buildImageUrl` for a real CDN/upload pipeline once
-// you have your own product photos.
-
-const CATEGORY_COLORS = {
-  "kajal": ["1a1a1a", "ffffff"],
-  "foundation": ["d4a574", "3b2a1a"],
-  "concealer": ["e8c39e", "3b2a1a"],
-  "blush": ["e75480", "ffffff"],
-  "compact-powder": ["c9a66b", "3b2a1a"],
-  "setting-spray": ["6ec6ca", "0b3c3e"],
-  "eyeshadow-palette": ["9b59b6", "ffffff"],
-  "highlighter": ["f5d76e", "5a4300"],
-  "cleanser": ["7fb3d5", "0b2b3c"],
-  "toner": ["a3d9a5", "1e3b1f"],
-  "serum": ["f0a868", "3b2200"],
-  "moisturizer": ["cdeac0", "1e3b1f"],
-  "sunscreen": ["ffd54f", "5a4300"],
-  "face-mask": ["8bd3c7", "0b3c3e"],
-  "exfoliator": ["e08283", "3b0a0b"],
-  "eye-cream": ["b39ddb", "2a1a3b"],
-  "lip-balm": ["f48fb1", "3b0a1a"],
-};
-
-const buildImageUrl = (name, brand, subCategory) => {
-  const [bg, fg] = CATEGORY_COLORS[subCategory] || ["cccccc", "333333"];
-  const label = encodeURIComponent(`${brand}\n${name}`);
-  return `https://placehold.co/500x500/${bg}/${fg}?text=${label}&font=roboto`;
-};
-
 const products = [
-  // ================= MAKEUP =================
-
-  // ---- Kajal (4) ----
-  { name: "Eyeconic Kajal", brand: "Lakmé", category: "makeup", subCategory: "kajal", description: "Smudge-proof, long-wearing kajal for intense definition.", price: 220, isBestseller: true },
-  { name: "Colossal Kajal", brand: "Maybelline", category: "makeup", subCategory: "kajal", description: "Deep black, 36-hour smudge-proof kajal.", price: 199 },
-  { name: "Kohl Attitude Kajal", brand: "NYX", category: "makeup", subCategory: "kajal", description: "Creamy, richly pigmented kohl kajal.", price: 650 },
-  { name: "Diva Deep Black Kajal", brand: "Sugar Cosmetics", category: "makeup", subCategory: "kajal", description: "Waterproof, transfer-proof intense black kajal.", price: 299 },
-
-  // ---- Foundation (4) ----
-  { name: "Fit Me Matte + Poreless Foundation", brand: "Maybelline", category: "makeup", subCategory: "foundation", description: "Lightweight, breathable foundation for a natural matte finish.", price: 449, isBestseller: true },
-  { name: "Studio Fix Fluid Foundation", brand: "MAC", category: "makeup", subCategory: "foundation", description: "Medium-to-full coverage matte foundation.", price: 3200 },
-  { name: "Perfect Radiance Foundation", brand: "Lakmé", category: "makeup", subCategory: "foundation", description: "Brightening foundation with a dewy natural glow.", price: 575 },
-  { name: "Ace of Face Foundation Stick", brand: "Sugar Cosmetics", category: "makeup", subCategory: "foundation", description: "Buildable coverage foundation stick for on-the-go application.", price: 699 },
-
-  // ---- Concealer (4) ----
-  { name: "Instant Age Rewind Concealer", brand: "Maybelline", category: "makeup", subCategory: "concealer", description: "Brightens and covers dark circles instantly.", price: 375, isBestseller: true },
-  { name: "Studio Finish Concealer", brand: "MAC", category: "makeup", subCategory: "concealer", description: "Full coverage, long-lasting matte concealer.", price: 1850 },
-  { name: "Absolute Perfect Concealer", brand: "Lakmé", category: "makeup", subCategory: "concealer", description: "Creamy, blendable concealer for everyday coverage.", price: 425 },
-  { name: "Ultra Matte Concealer", brand: "NYX", category: "makeup", subCategory: "concealer", description: "High-coverage matte finish concealer.", price: 750 },
-
-  // ---- Blush (4) ----
-  { name: "Cream Blush Stick", brand: "NYX", category: "makeup", subCategory: "blush", description: "Blendable cream blush for a natural flushed finish.", price: 699 },
-  { name: "Cheek Pop Blush", brand: "Maybelline", category: "makeup", subCategory: "blush", description: "Lightweight, buildable pop of colour for cheeks.", price: 375, isBestseller: true },
-  { name: "Powder Blush", brand: "MAC", category: "makeup", subCategory: "blush", description: "Silky powder blush with a soft-focus finish.", price: 2400 },
-  { name: "Contour De Force Blush", brand: "Sugar Cosmetics", category: "makeup", subCategory: "blush", description: "Richly pigmented blush duo for a sculpted look.", price: 599 },
-
-  // ---- Compact Powder (4) ----
-  { name: "9 to 5 Primer + Matte Perfect Cover Compact", brand: "Lakmé", category: "makeup", subCategory: "compact-powder", description: "Long-lasting matte finish compact powder.", price: 460, isBestseller: true },
-  { name: "Fit Me Compact Powder", brand: "Maybelline", category: "makeup", subCategory: "compact-powder", description: "Oil-absorbing compact for a shine-free look.", price: 299 },
-  { name: "Studio Fix Powder Plus Foundation", brand: "MAC", category: "makeup", subCategory: "compact-powder", description: "Two-in-one powder and foundation compact.", price: 3100 },
-  { name: "Poreless Face Perfecting Compact", brand: "Colorbar", category: "makeup", subCategory: "compact-powder", description: "Blurs pores for a smooth, poreless finish.", price: 550 },
-
-  // ---- Setting Spray (4) ----
-  { name: "All Nighter Setting Spray", brand: "Urban Decay", category: "makeup", subCategory: "setting-spray", description: "Long-lasting setting spray that locks makeup in place.", price: 2900, isBestseller: true },
-  { name: "Prep + Prime Fix+", brand: "MAC", category: "makeup", subCategory: "setting-spray", description: "Multi-purpose finishing and refreshing mist.", price: 2100 },
-  { name: "Matte Finish Setting Spray", brand: "NYX", category: "makeup", subCategory: "setting-spray", description: "Lightweight matte-finish makeup setting spray.", price: 899 },
-  { name: "24 Hour Setting Spray", brand: "Sugar Cosmetics", category: "makeup", subCategory: "setting-spray", description: "Weightless mist for all-day makeup wear.", price: 650 },
-
-  // ---- Eyeshadow Palette (4) ----
-  { name: "Desert Dusk Eyeshadow Palette", brand: "Huda Beauty", category: "makeup", subCategory: "eyeshadow-palette", description: "Warm-toned, highly pigmented eyeshadow palette.", price: 2900, isBestseller: true },
-  { name: "Naked Eyeshadow Palette", brand: "Urban Decay", category: "makeup", subCategory: "eyeshadow-palette", description: "Neutral-tone eyeshadow palette for everyday looks.", price: 3400 },
-  { name: "9 to 5 Eye Shadow Palette", brand: "Lakmé", category: "makeup", subCategory: "eyeshadow-palette", description: "Versatile everyday shades in one compact palette.", price: 750 },
-  { name: "Ultimate Eyeshadow Palette", brand: "NYX", category: "makeup", subCategory: "eyeshadow-palette", description: "Highly blendable multi-shade eyeshadow palette.", price: 1600 },
-
-  // ---- Highlighter (4) ----
-  { name: "Fit Me Highlighter Stick", brand: "Maybelline", category: "makeup", subCategory: "highlighter", description: "Buildable, luminous glow highlighter stick.", price: 399, isBestseller: true },
-  { name: "Mini Sun Disc Highlighter", brand: "Fenty Beauty", category: "makeup", subCategory: "highlighter", description: "Ultra-fine, blinding-light powder highlighter.", price: 2600 },
-  { name: "Strobe Cream Highlighter", brand: "MAC", category: "makeup", subCategory: "highlighter", description: "Luminizing cream highlighter for a lit-from-within glow.", price: 2500 },
-  { name: "Glow Kit Highlighter Palette", brand: "Sugar Cosmetics", category: "makeup", subCategory: "highlighter", description: "Multi-shade highlighter palette for face sculpting.", price: 899 },
-
-  // ================= SKINCARE =================
-
-  // ---- Cleanser (4) ----
-  { name: "Gentle Skin Cleanser", brand: "Cetaphil", category: "skincare", subCategory: "cleanser", description: "Soap-free, fragrance-free cleanser suitable for sensitive skin.", price: 550, isBestseller: true },
-  { name: "Hydrating Facial Cleanser", brand: "CeraVe", category: "skincare", subCategory: "cleanser", description: "Ceramide-rich cleanser that restores the protective skin barrier.", price: 749 },
-  { name: "Squeaky Clean Foaming Cleanser", brand: "Plum", category: "skincare", subCategory: "cleanser", description: "Foaming cleanser that removes dirt without stripping skin.", price: 425 },
-  { name: "Ubtan Natural Face Cleanser", brand: "Mamaearth", category: "skincare", subCategory: "cleanser", description: "Turmeric and saffron-based gentle daily cleanser.", price: 299 },
-
-  // ---- Toner (4) ----
-  { name: "Glycolic Acid 7% Toning Solution", brand: "The Ordinary", category: "skincare", subCategory: "toner", description: "Exfoliating toner for smoother, brighter-looking skin.", price: 890, isBestseller: true },
-  { name: "Skin Perfecting Toner", brand: "Minimalist", category: "skincare", subCategory: "toner", description: "Alcohol-free hydrating toner with niacinamide.", price: 449 },
-  { name: "Rose Water Facial Toner", brand: "Dot & Key", category: "skincare", subCategory: "toner", description: "Soothing rose-based toner for daily hydration.", price: 375 },
-  { name: "Refreshing Skin Tonic", brand: "Simple", category: "skincare", subCategory: "toner", description: "Gentle, alcohol-free toner for sensitive skin.", price: 350 },
-
-  // ---- Serum (4) ----
-  { name: "Niacinamide 10% + Zinc 1% Serum", brand: "The Ordinary", category: "skincare", subCategory: "serum", description: "High-strength vitamin and mineral blemish formula.", price: 690, isBestseller: true },
-  { name: "Sepicalm Redness Relief Serum", brand: "Minimalist", category: "skincare", subCategory: "serum", description: "Soothes redness and calms sensitive, reactive skin.", price: 599 },
-  { name: "10% Vitamin C Face Serum", brand: "Dot & Key", category: "skincare", subCategory: "serum", description: "Brightening serum that targets dullness and dark spots.", price: 695 },
-  { name: "Hyaluronic Acid 2% + B5 Serum", brand: "The Ordinary", category: "skincare", subCategory: "serum", description: "Intense hydration serum for plumper-looking skin.", price: 720 },
-
-  // ---- Moisturizer (4) ----
-  { name: "Hydro Boost Water Gel Moisturizer", brand: "Neutrogena", category: "skincare", subCategory: "moisturizer", description: "Oil-free gel moisturizer with hyaluronic acid for 24-hour hydration.", price: 899, isBestseller: true },
-  { name: "Moisturising Cream", brand: "CeraVe", category: "skincare", subCategory: "moisturizer", description: "Ceramide-rich cream for dry to very dry skin.", price: 825 },
-  { name: "Water Facial Moisturiser", brand: "Simple", category: "skincare", subCategory: "moisturizer", description: "Lightweight daily moisturiser for sensitive skin.", price: 375 },
-  { name: "Onion Daily Moisturizer", brand: "Mamaearth", category: "skincare", subCategory: "moisturizer", description: "Lightweight moisturiser for daily hydration and shine control.", price: 349 },
-
-  // ---- Sunscreen (4) ----
-  { name: "Ultra Light Matte Sunscreen SPF 50", brand: "Minimalist", category: "skincare", subCategory: "sunscreen", description: "Broad-spectrum sunscreen with a matte, non-greasy finish.", price: 549, isBestseller: true },
-  { name: "Water Light Sunscreen SPF 50", brand: "Dot & Key", category: "skincare", subCategory: "sunscreen", description: "Lightweight, no-white-cast daily sunscreen.", price: 595 },
-  { name: "Ultra Sheer Dry-Touch Sunscreen SPF 55", brand: "Neutrogena", category: "skincare", subCategory: "sunscreen", description: "Fast-absorbing, non-greasy broad-spectrum sunscreen.", price: 549 },
-  { name: "AC+ Mattifying Sunscreen SPF 50", brand: "Plum", category: "skincare", subCategory: "sunscreen", description: "Oil-control sunscreen suitable for acne-prone skin.", price: 425 },
-
-  // ---- Face Mask (4) ----
-  { name: "Charcoal Purifying Face Mask", brand: "Mamaearth", category: "skincare", subCategory: "face-mask", description: "Detoxifying mask that draws out impurities.", price: 349, isBestseller: true },
-  { name: "Multi-Vitamin Sheet Mask", brand: "Dot & Key", category: "skincare", subCategory: "face-mask", description: "Hydrating sheet mask packed with antioxidants.", price: 149 },
-  { name: "Water Bomb Sleeping Mask", brand: "Minimalist", category: "skincare", subCategory: "face-mask", description: "Overnight hydrating mask for plump, dewy skin.", price: 650 },
-  { name: "Purifying Clay Mask", brand: "The Ordinary", category: "skincare", subCategory: "face-mask", description: "Deep-cleansing clay mask for congested pores.", price: 780 },
-
-  // ---- Exfoliator (4) ----
-  { name: "AHA 30% + BHA 2% Peeling Solution", brand: "The Ordinary", category: "skincare", subCategory: "exfoliator", description: "Intense exfoliating treatment for smoother, brighter skin.", price: 790, isBestseller: true },
-  { name: "Walnut Face Scrub", brand: "Mamaearth", category: "skincare", subCategory: "exfoliator", description: "Gentle exfoliating scrub with natural walnut granules.", price: 299 },
-  { name: "Vitamin C Face Scrub", brand: "Plum", category: "skincare", subCategory: "exfoliator", description: "Brightening scrub that removes dead skin cells.", price: 375 },
-  { name: "2% BHA Liquid Exfoliant", brand: "Minimalist", category: "skincare", subCategory: "exfoliator", description: "Salicylic acid exfoliant for smoother, clearer skin.", price: 599 },
-
-  // ---- Eye Cream (4) ----
-  { name: "Caffeine Solution 5% + EGCG Eye Serum", brand: "The Ordinary", category: "skincare", subCategory: "eye-cream", description: "Reduces the appearance of puffiness and dark circles.", price: 690, isBestseller: true },
-  { name: "Under Eye Cream", brand: "Minimalist", category: "skincare", subCategory: "eye-cream", description: "Caffeine and peptide-infused cream for tired eyes.", price: 549 },
-  { name: "Vitamin C Under Eye Cream", brand: "Dot & Key", category: "skincare", subCategory: "eye-cream", description: "Brightening eye cream to reduce dark circles.", price: 595 },
-  { name: "Hydro Boost Eye Gel Cream", brand: "Neutrogena", category: "skincare", subCategory: "eye-cream", description: "Lightweight gel-cream with hyaluronic acid for the eye area.", price: 699 },
-
-  // ---- Lip Balm (4) ----
-  { name: "Petroleum Jelly Lip Care", brand: "Cetaphil", category: "skincare", subCategory: "lip-balm", description: "Deeply moisturising balm for dry, chapped lips.", price: 199, isBestseller: true },
-  { name: "Nourishing Lip Butter", brand: "Plum", category: "skincare", subCategory: "lip-balm", description: "Shea butter-based balm for soft, hydrated lips.", price: 275 },
-  { name: "Tinted Lip Balm", brand: "Mamaearth", category: "skincare", subCategory: "lip-balm", description: "Nourishing balm with a subtle tint of colour.", price: 249 },
-  { name: "Overnight Lip Mask", brand: "Minimalist", category: "skincare", subCategory: "lip-balm", description: "Intensive overnight treatment for soft, plump lips.", price: 399 },
+  { name: "Eyeconic Kajal", brand: "Lakmé", category: "makeup", subCategory: "kajal", description: "Smudge-proof, long-wearing kajal for intense definition.", price: 220, images: ["https://placehold.co/500x500/2B2B2B/FFFFFF?text=Lakm%C3%A9%0AEyeconic%20Kajal"], isBestseller: true },
+  { name: "Colossal Kajal", brand: "Maybelline", category: "makeup", subCategory: "kajal", description: "Deep black, 36-hour smudge-proof kajal.", price: 199, images: ["https://placehold.co/500x500/2B2B2B/FFFFFF?text=Maybelline%0AColossal%20Kajal"] },
+  { name: "Kohl Attitude Kajal", brand: "NYX", category: "makeup", subCategory: "kajal", description: "Creamy, richly pigmented kohl kajal.", price: 650, images: ["https://placehold.co/500x500/2B2B2B/FFFFFF?text=NYX%0AKohl%20Attitude%20Kajal"] },
+  { name: "Diva Deep Black Kajal", brand: "Sugar Cosmetics", category: "makeup", subCategory: "kajal", description: "Waterproof, transfer-proof intense black kajal.", price: 299, images: ["https://placehold.co/500x500/2B2B2B/FFFFFF?text=Sugar%20Cosmetics%0ADiva%20Deep%20Black%20Kajal"] },
+  { name: "Fit Me Matte + Poreless Foundation", brand: "Maybelline", category: "makeup", subCategory: "foundation", description: "Lightweight, breathable foundation for a natural matte finish.", price: 449, images: ["https://placehold.co/500x500/E8C9A8/3B1F2B?text=Maybelline%0AFit%20Me%20Matte%20%2B%20Poreless%20Foundation"], isBestseller: true },
+  { name: "Studio Fix Fluid Foundation", brand: "MAC", category: "makeup", subCategory: "foundation", description: "Medium-to-full coverage matte foundation.", price: 3200, images: ["https://placehold.co/500x500/E8C9A8/3B1F2B?text=MAC%0AStudio%20Fix%20Fluid%20Foundation"] },
+  { name: "Perfect Radiance Foundation", brand: "Lakmé", category: "makeup", subCategory: "foundation", description: "Brightening foundation with a dewy natural glow.", price: 575, images: ["https://placehold.co/500x500/E8C9A8/3B1F2B?text=Lakm%C3%A9%0APerfect%20Radiance%20Foundation"] },
+  { name: "Ace of Face Foundation Stick", brand: "Sugar Cosmetics", category: "makeup", subCategory: "foundation", description: "Buildable coverage foundation stick for on-the-go application.", price: 699, images: ["https://placehold.co/500x500/E8C9A8/3B1F2B?text=Sugar%20Cosmetics%0AAce%20of%20Face%20Foundation%20Stick"] },
+  { name: "Instant Age Rewind Concealer", brand: "Maybelline", category: "makeup", subCategory: "concealer", description: "Brightens and covers dark circles instantly.", price: 375, images: ["https://placehold.co/500x500/F0D5BB/3B1F2B?text=Maybelline%0AInstant%20Age%20Rewind%20Concealer"], isBestseller: true },
+  { name: "Studio Finish Concealer", brand: "MAC", category: "makeup", subCategory: "concealer", description: "Full coverage, long-lasting matte concealer.", price: 1850, images: ["https://placehold.co/500x500/F0D5BB/3B1F2B?text=MAC%0AStudio%20Finish%20Concealer"] },
+  { name: "Absolute Perfect Concealer", brand: "Lakmé", category: "makeup", subCategory: "concealer", description: "Creamy, blendable concealer for everyday coverage.", price: 425, images: ["https://placehold.co/500x500/F0D5BB/3B1F2B?text=Lakm%C3%A9%0AAbsolute%20Perfect%20Concealer"] },
+  { name: "Ultra Matte Concealer", brand: "NYX", category: "makeup", subCategory: "concealer", description: "High-coverage matte finish concealer.", price: 750, images: ["https://placehold.co/500x500/F0D5BB/3B1F2B?text=NYX%0AUltra%20Matte%20Concealer"] },
+  { name: "Cream Blush Stick", brand: "NYX", category: "makeup", subCategory: "blush", description: "Blendable cream blush for a natural flushed finish.", price: 699, images: ["https://placehold.co/500x500/F4A6C1/3B1F2B?text=NYX%0ACream%20Blush%20Stick"] },
+  { name: "Cheek Pop Blush", brand: "Maybelline", category: "makeup", subCategory: "blush", description: "Lightweight, buildable pop of colour for cheeks.", price: 375, images: ["https://placehold.co/500x500/F4A6C1/3B1F2B?text=Maybelline%0ACheek%20Pop%20Blush"], isBestseller: true },
+  { name: "Powder Blush", brand: "MAC", category: "makeup", subCategory: "blush", description: "Silky powder blush with a soft-focus finish.", price: 2400, images: ["https://placehold.co/500x500/F4A6C1/3B1F2B?text=MAC%0APowder%20Blush"] },
+  { name: "Contour De Force Blush", brand: "Sugar Cosmetics", category: "makeup", subCategory: "blush", description: "Richly pigmented blush duo for a sculpted look.", price: 599, images: ["https://placehold.co/500x500/F4A6C1/3B1F2B?text=Sugar%20Cosmetics%0AContour%20De%20Force%20Blush"] },
+  { name: "9 to 5 Primer + Matte Perfect Cover Compact", brand: "Lakmé", category: "makeup", subCategory: "compact-powder", description: "Long-lasting matte finish compact powder.", price: 460, images: ["https://placehold.co/500x500/EAD9C9/3B1F2B?text=Lakm%C3%A9%0A9%20to%205%20Primer%20%2B%20Matte%20Perfect%20Cover%20Compact"], isBestseller: true },
+  { name: "Fit Me Compact Powder", brand: "Maybelline", category: "makeup", subCategory: "compact-powder", description: "Oil-absorbing compact for a shine-free look.", price: 299, images: ["https://placehold.co/500x500/EAD9C9/3B1F2B?text=Maybelline%0AFit%20Me%20Compact%20Powder"] },
+  { name: "Studio Fix Powder Plus Foundation", brand: "MAC", category: "makeup", subCategory: "compact-powder", description: "Two-in-one powder and foundation compact.", price: 3100, images: ["https://placehold.co/500x500/EAD9C9/3B1F2B?text=MAC%0AStudio%20Fix%20Powder%20Plus%20Foundation"] },
+  { name: "Poreless Face Perfecting Compact", brand: "Colorbar", category: "makeup", subCategory: "compact-powder", description: "Blurs pores for a smooth, poreless finish.", price: 550, images: ["https://placehold.co/500x500/EAD9C9/3B1F2B?text=Colorbar%0APoreless%20Face%20Perfecting%20Compact"] },
+  { name: "All Nighter Setting Spray", brand: "Urban Decay", category: "makeup", subCategory: "setting-spray", description: "Long-lasting setting spray that locks makeup in place.", price: 2900, images: ["https://placehold.co/500x500/CFE8E0/3B1F2B?text=Urban%20Decay%0AAll%20Nighter%20Setting%20Spray"], isBestseller: true },
+  { name: "Prep + Prime Fix+", brand: "MAC", category: "makeup", subCategory: "setting-spray", description: "Multi-purpose finishing and refreshing mist.", price: 2100, images: ["https://placehold.co/500x500/CFE8E0/3B1F2B?text=MAC%0APrep%20%2B%20Prime%20Fix%2B"] },
+  { name: "Matte Finish Setting Spray", brand: "NYX", category: "makeup", subCategory: "setting-spray", description: "Lightweight matte-finish makeup setting spray.", price: 899, images: ["https://placehold.co/500x500/CFE8E0/3B1F2B?text=NYX%0AMatte%20Finish%20Setting%20Spray"] },
+  { name: "24 Hour Setting Spray", brand: "Sugar Cosmetics", category: "makeup", subCategory: "setting-spray", description: "Weightless mist for all-day makeup wear.", price: 650, images: ["https://placehold.co/500x500/CFE8E0/3B1F2B?text=Sugar%20Cosmetics%0A24%20Hour%20Setting%20Spray"] },
+  { name: "Desert Dusk Eyeshadow Palette", brand: "Huda Beauty", category: "makeup", subCategory: "eyeshadow-palette", description: "Warm-toned, highly pigmented eyeshadow palette.", price: 2900, images: ["https://placehold.co/500x500/C9A6D9/3B1F2B?text=Huda%20Beauty%0ADesert%20Dusk%20Eyeshadow%20Palette"], isBestseller: true },
+  { name: "Naked Eyeshadow Palette", brand: "Urban Decay", category: "makeup", subCategory: "eyeshadow-palette", description: "Neutral-tone eyeshadow palette for everyday looks.", price: 3400, images: ["https://placehold.co/500x500/C9A6D9/3B1F2B?text=Urban%20Decay%0ANaked%20Eyeshadow%20Palette"] },
+  { name: "9 to 5 Eye Shadow Palette", brand: "Lakmé", category: "makeup", subCategory: "eyeshadow-palette", description: "Versatile everyday shades in one compact palette.", price: 750, images: ["https://placehold.co/500x500/C9A6D9/3B1F2B?text=Lakm%C3%A9%0A9%20to%205%20Eye%20Shadow%20Palette"] },
+  { name: "Ultimate Eyeshadow Palette", brand: "NYX", category: "makeup", subCategory: "eyeshadow-palette", description: "Highly blendable multi-shade eyeshadow palette.", price: 1600, images: ["https://placehold.co/500x500/C9A6D9/3B1F2B?text=NYX%0AUltimate%20Eyeshadow%20Palette"] },
+  { name: "Fit Me Highlighter Stick", brand: "Maybelline", category: "makeup", subCategory: "highlighter", description: "Buildable, luminous glow highlighter stick.", price: 399, images: ["https://placehold.co/500x500/F5E1A4/3B1F2B?text=Maybelline%0AFit%20Me%20Highlighter%20Stick"], isBestseller: true },
+  { name: "Mini Sun Disc Highlighter", brand: "Fenty Beauty", category: "makeup", subCategory: "highlighter", description: "Ultra-fine, blinding-light powder highlighter.", price: 2600, images: ["https://placehold.co/500x500/F5E1A4/3B1F2B?text=Fenty%20Beauty%0AMini%20Sun%20Disc%20Highlighter"] },
+  { name: "Strobe Cream Highlighter", brand: "MAC", category: "makeup", subCategory: "highlighter", description: "Luminizing cream highlighter for a lit-from-within glow.", price: 2500, images: ["https://placehold.co/500x500/F5E1A4/3B1F2B?text=MAC%0AStrobe%20Cream%20Highlighter"] },
+  { name: "Glow Kit Highlighter Palette", brand: "Sugar Cosmetics", category: "makeup", subCategory: "highlighter", description: "Multi-shade highlighter palette for face sculpting.", price: 899, images: ["https://placehold.co/500x500/F5E1A4/3B1F2B?text=Sugar%20Cosmetics%0AGlow%20Kit%20Highlighter%20Palette"] },
+  { name: "Gentle Skin Cleanser", brand: "Cetaphil", category: "skincare", subCategory: "cleanser", description: "Soap-free, fragrance-free cleanser suitable for sensitive skin.", price: 550, images: ["https://placehold.co/500x500/BFE3F0/3B1F2B?text=Cetaphil%0AGentle%20Skin%20Cleanser"], isBestseller: true },
+  { name: "Hydrating Facial Cleanser", brand: "CeraVe", category: "skincare", subCategory: "cleanser", description: "Ceramide-rich cleanser that restores the protective skin barrier.", price: 749, images: ["https://placehold.co/500x500/BFE3F0/3B1F2B?text=CeraVe%0AHydrating%20Facial%20Cleanser"] },
+  { name: "Squeaky Clean Foaming Cleanser", brand: "Plum", category: "skincare", subCategory: "cleanser", description: "Foaming cleanser that removes dirt without stripping skin.", price: 425, images: ["https://placehold.co/500x500/BFE3F0/3B1F2B?text=Plum%0ASqueaky%20Clean%20Foaming%20Cleanser"] },
+  { name: "Ubtan Natural Face Cleanser", brand: "Mamaearth", category: "skincare", subCategory: "cleanser", description: "Turmeric and saffron-based gentle daily cleanser.", price: 299, images: ["https://placehold.co/500x500/BFE3F0/3B1F2B?text=Mamaearth%0AUbtan%20Natural%20Face%20Cleanser"] },
+  { name: "Glycolic Acid 7% Toning Solution", brand: "The Ordinary", category: "skincare", subCategory: "toner", description: "Exfoliating toner for smoother, brighter-looking skin.", price: 890, images: ["https://placehold.co/500x500/D7F0E0/3B1F2B?text=The%20Ordinary%0AGlycolic%20Acid%207%25%20Toning%20Solution"], isBestseller: true },
+  { name: "Skin Perfecting Toner", brand: "Minimalist", category: "skincare", subCategory: "toner", description: "Alcohol-free hydrating toner with niacinamide.", price: 449, images: ["https://placehold.co/500x500/D7F0E0/3B1F2B?text=Minimalist%0ASkin%20Perfecting%20Toner"] },
+  { name: "Rose Water Facial Toner", brand: "Dot & Key", category: "skincare", subCategory: "toner", description: "Soothing rose-based toner for daily hydration.", price: 375, images: ["https://placehold.co/500x500/D7F0E0/3B1F2B?text=Dot%20%26%20Key%0ARose%20Water%20Facial%20Toner"] },
+  { name: "Refreshing Skin Tonic", brand: "Simple", category: "skincare", subCategory: "toner", description: "Gentle, alcohol-free toner for sensitive skin.", price: 350, images: ["https://placehold.co/500x500/D7F0E0/3B1F2B?text=Simple%0ARefreshing%20Skin%20Tonic"] },
+  { name: "Niacinamide 10% + Zinc 1% Serum", brand: "The Ordinary", category: "skincare", subCategory: "serum", description: "High-strength vitamin and mineral blemish formula.", price: 690, images: ["https://placehold.co/500x500/FFE1B8/3B1F2B?text=The%20Ordinary%0ANiacinamide%2010%25%20%2B%20Zinc%201%25%20Serum"], isBestseller: true },
+  { name: "Sepicalm Redness Relief Serum", brand: "Minimalist", category: "skincare", subCategory: "serum", description: "Soothes redness and calms sensitive, reactive skin.", price: 599, images: ["https://placehold.co/500x500/FFE1B8/3B1F2B?text=Minimalist%0ASepicalm%20Redness%20Relief%20Serum"] },
+  { name: "10% Vitamin C Face Serum", brand: "Dot & Key", category: "skincare", subCategory: "serum", description: "Brightening serum that targets dullness and dark spots.", price: 695, images: ["https://placehold.co/500x500/FFE1B8/3B1F2B?text=Dot%20%26%20Key%0A10%25%20Vitamin%20C%20Face%20Serum"] },
+  { name: "Hyaluronic Acid 2% + B5 Serum", brand: "The Ordinary", category: "skincare", subCategory: "serum", description: "Intense hydration serum for plumper-looking skin.", price: 720, images: ["https://placehold.co/500x500/FFE1B8/3B1F2B?text=The%20Ordinary%0AHyaluronic%20Acid%202%25%20%2B%20B5%20Serum"] },
+  { name: "Hydro Boost Water Gel Moisturizer", brand: "Neutrogena", category: "skincare", subCategory: "moisturizer", description: "Oil-free gel moisturizer with hyaluronic acid for 24-hour hydration.", price: 899, images: ["https://placehold.co/500x500/E3F0D9/3B1F2B?text=Neutrogena%0AHydro%20Boost%20Water%20Gel%20Moisturizer"], isBestseller: true },
+  { name: "Moisturising Cream", brand: "CeraVe", category: "skincare", subCategory: "moisturizer", description: "Ceramide-rich cream for dry to very dry skin.", price: 825, images: ["https://placehold.co/500x500/E3F0D9/3B1F2B?text=CeraVe%0AMoisturising%20Cream"] },
+  { name: "Water Facial Moisturiser", brand: "Simple", category: "skincare", subCategory: "moisturizer", description: "Lightweight daily moisturiser for sensitive skin.", price: 375, images: ["https://placehold.co/500x500/E3F0D9/3B1F2B?text=Simple%0AWater%20Facial%20Moisturiser"] },
+  { name: "Onion Daily Moisturizer", brand: "Mamaearth", category: "skincare", subCategory: "moisturizer", description: "Lightweight moisturiser for daily hydration and shine control.", price: 349, images: ["https://placehold.co/500x500/E3F0D9/3B1F2B?text=Mamaearth%0AOnion%20Daily%20Moisturizer"] },
+  { name: "Ultra Light Matte Sunscreen SPF 50", brand: "Minimalist", category: "skincare", subCategory: "sunscreen", description: "Broad-spectrum sunscreen with a matte, non-greasy finish.", price: 549, images: ["https://placehold.co/500x500/FFF0B8/3B1F2B?text=Minimalist%0AUltra%20Light%20Matte%20Sunscreen%20SPF%2050"], isBestseller: true },
+  { name: "Water Light Sunscreen SPF 50", brand: "Dot & Key", category: "skincare", subCategory: "sunscreen", description: "Lightweight, no-white-cast daily sunscreen.", price: 595, images: ["https://placehold.co/500x500/FFF0B8/3B1F2B?text=Dot%20%26%20Key%0AWater%20Light%20Sunscreen%20SPF%2050"] },
+  { name: "Ultra Sheer Dry-Touch Sunscreen SPF 55", brand: "Neutrogena", category: "skincare", subCategory: "sunscreen", description: "Fast-absorbing, non-greasy broad-spectrum sunscreen.", price: 549, images: ["https://placehold.co/500x500/FFF0B8/3B1F2B?text=Neutrogena%0AUltra%20Sheer%20Dry-Touch%20Sunscreen%20SPF%2055"] },
+  { name: "AC+ Mattifying Sunscreen SPF 50", brand: "Plum", category: "skincare", subCategory: "sunscreen", description: "Oil-control sunscreen suitable for acne-prone skin.", price: 425, images: ["https://placehold.co/500x500/FFF0B8/3B1F2B?text=Plum%0AAC%2B%20Mattifying%20Sunscreen%20SPF%2050"] },
+  { name: "Charcoal Purifying Face Mask", brand: "Mamaearth", category: "skincare", subCategory: "face-mask", description: "Detoxifying mask that draws out impurities.", price: 349, images: ["https://placehold.co/500x500/E8C9D9/3B1F2B?text=Mamaearth%0ACharcoal%20Purifying%20Face%20Mask"], isBestseller: true },
+  { name: "Multi-Vitamin Sheet Mask", brand: "Dot & Key", category: "skincare", subCategory: "face-mask", description: "Hydrating sheet mask packed with antioxidants.", price: 149, images: ["https://placehold.co/500x500/E8C9D9/3B1F2B?text=Dot%20%26%20Key%0AMulti-Vitamin%20Sheet%20Mask"] },
+  { name: "Water Bomb Sleeping Mask", brand: "Minimalist", category: "skincare", subCategory: "face-mask", description: "Overnight hydrating mask for plump, dewy skin.", price: 650, images: ["https://placehold.co/500x500/E8C9D9/3B1F2B?text=Minimalist%0AWater%20Bomb%20Sleeping%20Mask"] },
+  { name: "Purifying Clay Mask", brand: "The Ordinary", category: "skincare", subCategory: "face-mask", description: "Deep-cleansing clay mask for congested pores.", price: 780, images: ["https://placehold.co/500x500/E8C9D9/3B1F2B?text=The%20Ordinary%0APurifying%20Clay%20Mask"] },
+  { name: "AHA 30% + BHA 2% Peeling Solution", brand: "The Ordinary", category: "skincare", subCategory: "exfoliator", description: "Intense exfoliating treatment for smoother, brighter skin.", price: 790, images: ["https://placehold.co/500x500/D9C9B8/3B1F2B?text=The%20Ordinary%0AAHA%2030%25%20%2B%20BHA%202%25%20Peeling%20Solution"], isBestseller: true },
+  { name: "Walnut Face Scrub", brand: "Mamaearth", category: "skincare", subCategory: "exfoliator", description: "Gentle exfoliating scrub with natural walnut granules.", price: 299, images: ["https://placehold.co/500x500/D9C9B8/3B1F2B?text=Mamaearth%0AWalnut%20Face%20Scrub"] },
+  { name: "Vitamin C Face Scrub", brand: "Plum", category: "skincare", subCategory: "exfoliator", description: "Brightening scrub that removes dead skin cells.", price: 375, images: ["https://placehold.co/500x500/D9C9B8/3B1F2B?text=Plum%0AVitamin%20C%20Face%20Scrub"] },
+  { name: "2% BHA Liquid Exfoliant", brand: "Minimalist", category: "skincare", subCategory: "exfoliator", description: "Salicylic acid exfoliant for smoother, clearer skin.", price: 599, images: ["https://placehold.co/500x500/D9C9B8/3B1F2B?text=Minimalist%0A2%25%20BHA%20Liquid%20Exfoliant"] },
+  { name: "Caffeine Solution 5% + EGCG Eye Serum", brand: "The Ordinary", category: "skincare", subCategory: "eye-cream", description: "Reduces the appearance of puffiness and dark circles.", price: 690, images: ["https://placehold.co/500x500/CDE0F0/3B1F2B?text=The%20Ordinary%0ACaffeine%20Solution%205%25%20%2B%20EGCG%20Eye%20Serum"], isBestseller: true },
+  { name: "Under Eye Cream", brand: "Minimalist", category: "skincare", subCategory: "eye-cream", description: "Caffeine and peptide-infused cream for tired eyes.", price: 549, images: ["https://placehold.co/500x500/CDE0F0/3B1F2B?text=Minimalist%0AUnder%20Eye%20Cream"] },
+  { name: "Vitamin C Under Eye Cream", brand: "Dot & Key", category: "skincare", subCategory: "eye-cream", description: "Brightening eye cream to reduce dark circles.", price: 595, images: ["https://placehold.co/500x500/CDE0F0/3B1F2B?text=Dot%20%26%20Key%0AVitamin%20C%20Under%20Eye%20Cream"] },
+  { name: "Hydro Boost Eye Gel Cream", brand: "Neutrogena", category: "skincare", subCategory: "eye-cream", description: "Lightweight gel-cream with hyaluronic acid for the eye area.", price: 699, images: ["https://placehold.co/500x500/CDE0F0/3B1F2B?text=Neutrogena%0AHydro%20Boost%20Eye%20Gel%20Cream"] },
+  { name: "Petroleum Jelly Lip Care", brand: "Cetaphil", category: "skincare", subCategory: "lip-balm", description: "Deeply moisturising balm for dry, chapped lips.", price: 199, images: ["https://placehold.co/500x500/F5B8C4/3B1F2B?text=Cetaphil%0APetroleum%20Jelly%20Lip%20Care"], isBestseller: true },
+  { name: "Nourishing Lip Butter", brand: "Plum", category: "skincare", subCategory: "lip-balm", description: "Shea butter-based balm for soft, hydrated lips.", price: 275, images: ["https://placehold.co/500x500/F5B8C4/3B1F2B?text=Plum%0ANourishing%20Lip%20Butter"] },
+  { name: "Tinted Lip Balm", brand: "Mamaearth", category: "skincare", subCategory: "lip-balm", description: "Nourishing balm with a subtle tint of colour.", price: 249, images: ["https://placehold.co/500x500/F5B8C4/3B1F2B?text=Mamaearth%0ATinted%20Lip%20Balm"] },
+  { name: "Overnight Lip Mask", brand: "Minimalist", category: "skincare", subCategory: "lip-balm", description: "Intensive overnight treatment for soft, plump lips.", price: 399, images: ["https://placehold.co/500x500/F5B8C4/3B1F2B?text=Minimalist%0AOvernight%20Lip%20Mask"] },
 ];
-
-// Attach a unique, non-repeating image to every product.
-products.forEach((p) => {
-  p.images = [buildImageUrl(p.name, p.brand, p.subCategory)];
-});
 
 const seedDB = async () => {
   try {
