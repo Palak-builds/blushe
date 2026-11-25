@@ -1,177 +1,170 @@
-# Blushé
+# Blushé: CI/CD pipeline to Kubernetes
 
-### Full-Stack Cosmetic E-Commerce Platform with End-to-End DevOps Deployment
+A MERN e-commerce app (Blushé, a cosmetics store) deployed to a Kubernetes cluster through a fully automated Jenkins CI/CD pipeline. A single `git push` builds the Docker images, pushes them to Docker Hub, and rolls the new version out to Kubernetes with no manual steps.
 
----
+## Architecture
 
-## Overview
+```mermaid
+flowchart TD
+  A[Developer: git push to main] --> B[GitHub repository]
+  B -->|polled every 2 min| C[Jenkins in Docker]
+  C --> D[Stage 1: Build Docker images]
+  D --> E[Stage 2: Push to Docker Hub]
+  E --> F[Stage 3: kubectl set image + rollout status]
+  E --> H[(Docker Hub)]
+  F --> G
+  H -->|pulls image| G
+  subgraph G[minikube cluster]
+    direction LR
+    I[Frontend: nginx x2] -->|/api| J[Backend: Node API x1]
+    J --> K[(MongoDB x1 + volume)]
+  end
+```
 
-Blushé is a full-stack cosmetic and beauty e-commerce application, built and deployed with a complete DevOps workflow — covering everything from frontend and backend development to containerization, CI/CD automation, and cloud hosting. The platform offers a shopping experience across two main categories, **Makeup** and **Skincare**, with a cohesive pink-themed design, product browsing, cart and checkout functionality, and user account management.
+## Tech stack
 
-This repository contains the full project: `Frontend/`, `Backend/`, and the supporting deployment configuration.
+| Layer | Tools |
+|---|---|
+| Frontend | React, Vite, Tailwind CSS, served by nginx |
+| Backend | Node.js, Express, Mongoose, JWT |
+| Database | MongoDB (with a PersistentVolumeClaim) |
+| Containers | Docker, multi-stage builds, Docker Hub |
+| CI/CD | Jenkins (declarative pipeline, running in Docker) |
+| Orchestration | Kubernetes (minikube), kubectl |
 
----
-
-## Project Objective
-
-To design, build, and deploy a production-style e-commerce application end-to-end — combining full-stack development with real DevOps practices: version control, containerization, automated CI/CD pipelines, and cloud server deployment.
-
----
-
-## Repository Structure
+## Repository structure
 
 ```
 blushe/
-├── Frontend/            # React client application
-│   ├── src/
-│   ├── public/
-│   └── README.md
-├── Backend/              # Node/Express API and database logic
-│   ├── models/
-│   ├── routes/
-│   ├── controllers/
-│   └── README.md
-├── LICENSE
-└── README.md             # (this file)
+├── Backend/
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   └── server.js ...
+├── Frontend/
+│   ├── Dockerfile          # multi-stage: Vite build, then nginx
+│   ├── nginx.conf          # serves the SPA and proxies /api to the backend
+│   └── src/ ...
+├── k8s/
+│   ├── deployment.yaml     # frontend Deployment (2 replicas)
+│   ├── service.yaml        # frontend Service (NodePort)
+│   ├── backend.yaml        # backend Deployment + ClusterIP Service
+│   └── mongo.yaml          # MongoDB Deployment + PVC + Service
+├── Jenkinsfile             # the CI/CD pipeline
+└── README.md
 ```
 
----
+## How the pipeline works
 
-## Application Features
+The `Jenkinsfile` defines three stages:
 
-- **Category-based browsing** — Separate Makeup and Skincare sections
-- **Product detail pages** — Individual page per product with image, description, and price
-- **Cart & checkout** — Add-to-Cart and Buy Now purchase options
-- **User accounts** — Sign-in/login with a dashboard for saved addresses, order history, and gift cards
-- **Curated catalog** — Products modeled after real, recognizable cosmetic brands
-- **Consistent brand design** — Soft pink color palette across every page
+1. **Build images:** builds `palaksh16/blushe-frontend` and `palaksh16/blushe-backend`, tagged with the Jenkins build number (for example `:7`), so every deploy is traceable.
+2. **Push images:** logs in to Docker Hub with a stored access token and pushes both images. Each push retries up to 3 times to survive network drops.
+3. **Deploy to Kubernetes:** runs `kubectl set image` on both Deployments and waits for `kubectl rollout status`. If a rollout fails, it runs `kubectl rollout undo` automatically.
 
----
+Jenkins checks the repository for new commits every 2 minutes (Poll SCM), because the Jenkins server runs on a laptop that GitHub cannot reach with a webhook.
 
-## Technology Stack
+## Key design decisions
 
-| Layer | Technology |
-|---|---|
-| Frontend | React.js (Vite), HTML5, CSS3 |
-| Backend | Node.js, Express.js |
-| Database | MongoDB |
-| Authentication | JWT (JSON Web Tokens) |
-| Version Control | Git & GitHub |
-| Containerization | Docker |
-| CI/CD | Jenkins |
-| Hosting | AWS EC2 (Ubuntu) |
-| Remote Access | MobaXterm (SSH) |
+- **nginx as a reverse proxy.** The frontend is built with `VITE_API_URL=/api`, and nginx forwards `/api/*` to the `blushe-backend` Service. The browser only ever talks to one address, so there are no CORS problems and no hard-coded backend URLs.
+- **Secrets stay out of Git.** The JWT secret is stored as a Kubernetes Secret and injected as environment variables. Registry and cluster credentials live in Jenkins credentials (`dockerhub-creds`, `kubeconfig`).
+- **Two frontend replicas** keep the site available while a pod is being replaced during a rolling update.
+- **MongoDB uses a PersistentVolumeClaim**, so data survives pod restarts.
+- **Versioned image tags** (build number) instead of `latest` make rollbacks and audits simple.
+- **Automatic rollback** if the new version does not become healthy within 3 minutes.
 
----
-
-## Why This Stack Was Chosen
-
-- **React (Vite)** — For a fast, component-based frontend suited to a product-heavy catalog, with quicker builds than a traditional CRA setup.
-- **Node.js & Express** — A lightweight, JavaScript-based backend that pairs naturally with a React frontend, handling authentication, product data, and orders through a REST API.
-- **MongoDB** — A flexible, document-based database well-suited to product listings with varying attributes across categories.
-- **Docker** — Ensures the application runs consistently across the local machine and the production server, avoiding environment-related inconsistencies.
-- **Jenkins** — Automates the build-and-deploy pipeline so that every push to `main` is built and deployed without manual steps.
-- **AWS EC2** — Provides real cloud hosting experience, including server management and SSH-based deployment, rather than local-only testing.
-
----
-
-## Deployment Pipeline
-
-```
-Local Commit → GitHub Push → Jenkins Build → Docker Containerize → EC2 Deployment
-```
-
-1. Code is developed and committed locally, then pushed to GitHub.
-2. Jenkins detects the change and triggers the CI/CD pipeline.
-3. The application is built and packaged into Docker containers.
-4. The containerized app is deployed to an AWS EC2 (Ubuntu) instance, making it live.
-
----
-
-## Database
-
-MongoDB was installed and configured **manually on the AWS EC2 server** via SSH, rather than through Docker or an automated script.
-
-- **Database name:** `blushe`
-- **Collections:** `products`, `users`, `orders`
-- **Connection:** configured via `MONGO_URI` in the backend's `.env` file
-
-Raw database files are not included in this repository — they are non-portable binary files stored on the server (`/var/lib/mongodb`) and may contain real user data, so they're intentionally excluded for both practicality and security. See `Backend/README.md` for full setup steps.
-
----
-
-## Getting Started
+## Run it yourself
 
 ### Prerequisites
-- Node.js (v18+)
-- npm
-- MongoDB (local or Atlas)
-- Docker (optional, for containerized setup)
 
-### Clone the repository
+Docker Desktop, minikube, kubectl, and Git.
+
+### 1. Start the cluster and deploy
+
 ```bash
-git clone https://github.com/Palak-builds/blushe.git
-cd blushe
+minikube start --driver=docker
+
+# Create the backend secret (use your own random value)
+kubectl create secret generic blushe-backend-secret \
+  --from-literal=JWT_SECRET=<your-random-secret> \
+  --from-literal=JWT_EXPIRE=7d
+
+kubectl apply -f k8s/
+kubectl get pods
+
+# Load sample products
+kubectl exec deployment/blushe-backend -- node seed.js
+
+# Open the site (keep this terminal open)
+minikube service blushe-frontend --url
 ```
 
-### Run the frontend
+### 2. Start Jenkins
+
 ```bash
-cd Frontend
-npm install
-npm run dev
+docker run -d --name jenkins -p 8081:8080 \
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  --user root jenkins/jenkins:lts-jdk17
+
+# Install the Docker CLI and kubectl inside the Jenkins container
+docker exec -u root jenkins bash -c "apt-get update && apt-get install -y docker.io curl"
+docker exec -u root jenkins bash -c "curl -LO https://dl.k8s.io/release/v1.36.0/bin/linux/amd64/kubectl && install kubectl /usr/local/bin/kubectl"
+
+# Let Jenkins reach minikube
+docker network connect minikube jenkins
 ```
 
-### Run the backend
+Create a kubeconfig for Jenkins that points to minikube's internal address (`https://192.168.49.2:8443`).
+
+### 3. Configure Jenkins
+
+Add these under **Manage Jenkins, Credentials, System, Global**:
+
+| ID | Type | Contents |
+|---|---|---|
+| `dockerhub-creds` | Username with password | Docker Hub username and an access token |
+| `kubeconfig` | Secret file | The kubeconfig for minikube |
+
+Then create a **Pipeline** job with *Pipeline script from SCM*, this repository, branch `*/main`, script path `Jenkinsfile`, and *Poll SCM* set to `H/2 * * * *`.
+
+### 4. Trigger a deployment
+
+Change any text in the frontend and commit it to `main`. Within about two minutes Jenkins builds, pushes, and deploys the new version. Check it with:
+
 ```bash
-cd Backend
-npm install
-npm start
+kubectl get pods
+kubectl describe deployment blushe-frontend | grep Image
 ```
 
-See `Frontend/README.md` and `Backend/README.md` for detailed setup instructions specific to each part.
+## Demo
 
----
+- Demo video: *add link here*
+- Screenshots are in the `docs/` folder:
+  - Jenkins pipeline with all stages green
+  - Jenkins console output ending in `Finished: SUCCESS`
+  - `kubectl get pods` and `kubectl get deployments`
+  - Docker Hub repositories with build-number tags
+  - The running website
 
-## Deployment Challenges & Resolutions
+## Problems solved along the way
 
-Deploying across two environments (local Windows machine and a remote EC2 server) surfaced real Git and infrastructure challenges:
+| Problem | Fix |
+|---|---|
+| Jenkins in a container could not reach minikube at `127.0.0.1` | Connected Jenkins to the `minikube` Docker network and pointed the kubeconfig at the cluster's internal IP |
+| Pipeline could not find credentials | Credentials must be created in the System, Global store with exact IDs, not in a user's personal store |
+| Docker Hub timeouts and `EOF` errors during push | Added DNS servers to the Docker engine and wrapped build and push steps in `retry(3)` |
+| A failed early stage triggered a rollback of the running site | Moved rollback logic into the deploy stage so it only runs when the rollout itself fails |
+| Hard-coded `localhost:5000` API URL in the frontend | Built the image with `VITE_API_URL=/api` and added an nginx `/api` proxy |
 
-**1. Push rejected — non-fast-forward errors**
-The remote repository had commits that didn't exist locally, and vice versa. Git blocked the push to prevent overwriting history.
-*Resolved by:* pulling and merging diverged branches (`git pull origin main --no-rebase`), using `--allow-unrelated-histories` where local and remote had separate origins.
+## Future improvements
 
-**2. Divergent branch reconciliation required**
-Git needed an explicit strategy to reconcile diverged branches.
-*Resolved by:* pulling with an explicit merge strategy to safely combine histories.
-
-**3. Untracked files blocking a clean commit**
-A leftover, untracked `blushe/` folder on the EC2 server prevented a clean working tree.
-*Resolved by:* verifying its contents were unneeded, then removing it before committing.
-
-**4. Missing upstream branch tracking**
-The local `main` branch wasn't linked to `origin/main`, so pushes/pulls had no default remote.
-*Resolved by:* setting the upstream explicitly with `git push --set-upstream origin main`.
-
-**Root cause:** Nearly all issues traced back to local and remote Git histories being out of sync — common when a repository is initialized in more than one place without an initial pull. The consistent fix pattern: **pull → resolve → push.**
-
----
-
-## Key Learnings
-
-- Practical experience resolving real Git divergence and non-fast-forward conflicts across multiple environments.
-- Hands-on setup of a full CI/CD pipeline using Git, Jenkins, and Docker together.
-- Direct experience managing a remote cloud server (AWS EC2) via SSH, including manual database configuration.
-- Reinforced the importance of syncing repositories before pushing when multiple environments are involved.
-
----
-
-## License
-
-This project is licensed under the terms specified in the `LICENSE` file.
-
----
+- Replace `kubectl set image` with **Argo CD** (GitOps): Jenkins handles CI, Argo CD handles CD
+- Add an **Ingress** controller instead of NodePort
+- Package the manifests as a **Helm** chart
+- Add unit tests and an image vulnerability scan (for example Trivy) as extra pipeline stages
+- Add **Prometheus and Grafana** monitoring to the cluster
+- Use a GitHub webhook instead of polling when Jenkins runs on a public server
 
 ## Author
 
-**Palak**
-GitHub: [Palak-builds](https://github.com/Palak-builds)
+Palak, [github.com/Palak-builds](https://github.com/Palak-builds)
