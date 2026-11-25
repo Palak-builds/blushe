@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blushe-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blushe-backend
+  template:
+    metadata:
+      labels:
+        app: blushe-backend
+    spec:
+      containers:
+        - name: blushe-backend
+          image: palaksh16/blushe-backend:v1
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PORT
+              value: "5000"
+            - name: MONGO_URI
+              value: "mongodb://mongo:27017/blushe"
+            - name: CLIENT_URL
+              value: "http://localhost"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: blushe-backend-secret
+                  key: JWT_SECRET
+            - name: JWT_EXPIRE
+              valueFrom:
+                secretKeyRef:
+                  name: blushe-backend-secret
+                  key: JWT_EXPIRE
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blushe-backend
+spec:
+  selector:
+    app: blushe-backend
+  ports:
+    - port: 5000
+      targetPort: 5000
