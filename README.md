@@ -138,7 +138,6 @@ kubectl describe deployment blushe-frontend | grep Image
 
 ## Demo
 
-- Demo video: *add link here*
 - Screenshots are in the `docs/` folder:
   - Jenkins pipeline with all stages green
   - Jenkins console output ending in `Finished: SUCCESS`
